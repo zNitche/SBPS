@@ -9,6 +9,7 @@ const int LOW_VOLTAGE_LOAD_CUTOFF_VOLTAGE = 3.1;
 
 const int CHARGING_SWITCH = 0;
 const int LOAD_SWITCH = 1;
+const float LOAD_HYSTERESIS_VOLTAGE = 0.3;
 
 void setup() {
   analogReference(INTERNAL);
@@ -24,7 +25,7 @@ float getVoltage() {
     int adcValue = analogRead(A2);
     avg += adcValue * ADC_CONVERSION_VALUE;
 
-    delay(100);
+    delay(50);
   }
 
   return avg / READING_SAMPLES_COUNT;
@@ -32,7 +33,14 @@ float getVoltage() {
 
 
 void manageLoadSwitch(float voltage) {
-  if (voltage >= LOW_VOLTAGE_LOAD_CUTOFF_VOLTAGE) {
+  const int currentLoadSwitchState = digitalRead(LOAD_SWITCH);
+  float cutoffVoltage = LOW_VOLTAGE_LOAD_CUTOFF_VOLTAGE;
+
+  if (currentLoadSwitchState == LOW) {
+    cutoffVoltage += LOAD_HYSTERESIS_VOLTAGE;
+  }
+
+  if (voltage >= cutoffVoltage) {
     digitalWrite(LOAD_SWITCH, HIGH);
   } else {
     digitalWrite(LOAD_SWITCH, LOW);
